@@ -1,0 +1,1 @@
+read ( input in source ) do x = 10 ; y = x ; z = y

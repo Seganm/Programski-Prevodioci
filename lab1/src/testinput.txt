@@ -1,0 +1,26 @@
+program
+begin
+x : integer;
+    y : char;
+    z : string;
+    f : file;
+
+    x = 123;
+    x = 077;
+    x = 0x1A;
+
+    y = 'AB';
+    z = "hello world";
+(* Ovo je komentar *)
+    x = x + 5;
+    x = x - 3;
+    x = x + y;
+
+    read(x in f) do
+    begin
+        y = 'Z';
+        x = x + 1;
+    end
+
+end
+return
