@@ -1,0 +1,200 @@
+//import section
+
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+public int errNo = 0;
+   
+   public static void main( String[] args )
+   {
+      try
+	  {
+		   FileReader file = new FileReader( args[0] );
+		   Scanner scanner = new MPLexer( file );
+		   MPParserError parser = new MPParserError( scanner );
+		   parser.parse();
+		   if ( parser.errNo == 0 )
+		      System.out.println( "Analiza zavrsena. U kodu nema gresaka." );
+		   else
+		      System.out.println( "Analiza zavrsena. Broj gresaka: " + parser.errNo );
+	  }
+	  catch( Exception e )
+	  {
+		   e.printStackTrace();
+	  }
+   }
+   
+   public void syntax_error(Symbol cur_token)
+   {
+   	  
+   }
+   
+   public void report_error(String message, Object info)
+   {
+   	   System.out.print( message );
+   }
+   
+   public int getLine()
+   {
+   	  return (( MPLexer) getScanner()).getLine();
+   }
+:};
+
+
+//Terminal symbols
+terminal PROGRAM, INTEGER, CHAR, STRING, FILE, BEGIN, END, READ, OPEN, IN, RETURN;
+terminal ID, CONST, PLUS, MINUS, LEFTPAR, RIGHTPAR, COLON, ASSIGN, SEMICOLON, DO;
+
+//Nonterminal symbols
+non terminal Program, Block, VarList, Statements, Var, Type, Statement;
+non terminal Assignment, ReadExpression, Expression, ArithmeticExpression, PrimaryExpression;
+
+//Precedences added by Eclipse plugin
+
+
+//Grammar
+		
+Program ::= PROGRAM Block RETURN
+			| PROGRAM Block error:e
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje 'return' na kraju programa");
+				parser.errNo++;
+		:}
+		;
+		
+Block ::= BEGIN VarList Statements END
+		{:
+				System.out.println("2");
+		:}
+		| BEGIN VarList Statements error
+		{:
+				System.out.println( "Greska u liniji " + parser.getLine() + " Nedostaje 'end' na kraju bloka" );
+				parser.errNo++;
+		:}
+		;
+		
+VarList ::= VarList Var 
+					| Var
+		{:
+				System.out.println("3");
+		:}
+		;
+		
+Var ::= ID COLON Type SEMICOLON
+		{:
+				System.out.println("4");
+		:}
+		| ID COLON Type error 
+		{:
+				System.out.println( "Greska u liniji " + parser.getLine() + " Nedostaje ';'" );
+				parser.errNo++;
+		:}
+
+		;
+		
+Type ::= INTEGER 
+				| CHAR 
+				| STRING 
+				| FILE
+		{:
+				System.out.println("5");
+		:}
+		;
+		
+Statements ::= Statements SEMICOLON Statement 
+					| Statement
+		{:
+				System.out.println("6");
+		:}
+					| Statements SEMICOLON error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje statement");
+		:}
+		;
+		
+Statement ::= Assignment 
+					| ReadExpression
+		{:
+				System.out.println("7");
+		:}
+		;
+		
+Assignment ::= ID ASSIGN Expression
+		{:
+				System.out.println("8");
+		:}
+		;
+		
+Expression ::= ArithmeticExpression 
+					| OPEN LEFTPAR PrimaryExpression RIGHTPAR
+		{:
+				System.out.println("9");
+		:}
+					| OPEN LEFTPAR PrimaryExpression error
+		{:
+			System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje ')'"); 
+		:}
+					| OPEN LEFTPAR error
+		{:
+			System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje izraz"); 
+		:}
+					| OPEN error
+		{:
+			System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje '('"); 
+		:}
+					| error
+		{:
+			System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje 'open'"); 
+		:}
+		;
+		
+ArithmeticExpression ::= ArithmeticExpression PLUS PrimaryExpression
+								| ArithmeticExpression MINUS PrimaryExpression
+								| PrimaryExpression
+		{:
+				System.out.println("10");
+		:}
+		;
+		
+PrimaryExpression ::= ID 
+					| CONST
+        {:
+				System.out.println("11");
+		:}		
+		;
+		
+ReadExpression ::= READ LEFTPAR ID IN ID RIGHTPAR DO Block
+		{:
+				System.out.println("12");
+		:}
+				| READ LEFTPAR ID IN ID RIGHTPAR DO error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje blok");
+		:}
+				| READ LEFTPAR ID IN ID RIGHTPAR error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje 'do'");
+		:}
+				| READ LEFTPAR ID IN ID error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje ')'");
+		:}
+				| READ LEFTPAR ID IN error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje druga promenljiva");
+		:}
+				| READ LEFTPAR ID error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje 'in'");
+		:}
+				| READ LEFTPAR error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje prva promenljiva");
+		:}
+				| READ error
+		{:
+				System.out.println("Greska u liniji " + parser.getLine() + " Nedostaje '('");
+		:}
+		;
+

@@ -1,0 +1,139 @@
+//import section
+
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+public int errNo = 0;
+   
+   public static void main( String[] args )
+   {
+      try
+	  {
+		   FileReader file = new FileReader( args[0] );
+		   Scanner scanner = new MPLexer( file );
+		   MPParser parser = new MPParser( scanner );
+		   parser.parse();
+		   if ( parser.errNo == 0 )
+		      System.out.println( "Analiza zavrsena. U kodu nema gresaka." );
+		   else
+		      System.out.println( "Analiza zavrsena. Broj gresaka: " + parser.errNo );
+	  }
+	  catch( Exception e )
+	  {
+		   e.printStackTrace();
+	  }
+   }
+   
+   public void syntax_error(Symbol cur_token)
+   {
+   	  
+   }
+   
+   public void report_error(String message, Object info)
+   {
+   	   System.out.print( message );
+   }
+   
+   public int getLine()
+   {
+   	  return (( MPLexer) getScanner()).getLine();
+   }
+:};
+
+
+//Terminal symbols
+terminal PROGRAM, INTEGER, CHAR, STRING, FILE, BEGIN, END, READ, OPEN, IN, RETURN;
+terminal ID, CONST, PLUS, MINUS, LEFTPAR, RIGHTPAR, COLON, ASSIGN, SEMICOLON, DO;
+
+//Nonterminal symbols
+non terminal Program, Block, VarList, Statements, Var, Type, Statement;
+non terminal Assignment, ReadExpression, Expression, ArithmeticExpression, PrimaryExpression;
+
+//Precedences added by Eclipse plugin
+
+
+//Grammar
+		
+Program ::= PROGRAM Block RETURN
+		{:
+				System.out.println("1");
+		:}
+		;
+		
+Block ::= BEGIN VarList Statements END
+		{:
+				System.out.println("2");
+		:}
+		;
+		
+VarList ::= VarList Var
+					| Var
+		{:
+				System.out.println("3");
+		:}
+		;
+		
+Var ::= ID COLON Type SEMICOLON
+		{:
+				System.out.println("4");
+		:}
+		;
+		
+Type ::= INTEGER 
+				| CHAR 
+				| STRING 
+				| FILE
+		{:
+				System.out.println("5");
+		:}
+		;
+		
+Statements ::= Statements SEMICOLON Statement 
+					| Statement
+		{:
+				System.out.println("6");
+		:}
+		;
+		
+Statement ::= Assignment 
+					| ReadExpression
+		{:
+				System.out.println("7");
+		:}
+		;
+		
+Assignment ::= ID ASSIGN Expression
+		{:
+				System.out.println("8");
+		:}
+		;
+		
+Expression ::= ArithmeticExpression 
+					| OPEN LEFTPAR PrimaryExpression RIGHTPAR
+		{:
+				System.out.println("9");
+		:}
+		;
+		
+ArithmeticExpression ::= ArithmeticExpression PLUS PrimaryExpression
+								| ArithmeticExpression MINUS PrimaryExpression
+								| PrimaryExpression
+		{:
+				System.out.println("10");
+		:}
+		;
+		
+PrimaryExpression ::= ID 
+							| CONST
+        {:
+				System.out.println("11");
+		:}		
+		;
+		
+ReadExpression ::= READ LEFTPAR ID IN ID RIGHTPAR DO Block
+		{:
+				System.out.println("12");
+		:}
+		;
+
