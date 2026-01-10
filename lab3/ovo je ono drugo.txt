@@ -1,0 +1,97 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+   public static int errNo = 0; // Brojač grešaka
+   
+   public void syntax_error(Symbol cur_token) {
+      errNo++;
+      String imeTokena = (cur_token.sym >= 0 && cur_token.sym < sym.terminalNames.length) 
+                         ? sym.terminalNames[cur_token.sym] : "UNKNOWN";
+      Object vrednost = (cur_token.value != null) ? cur_token.value : "";
+
+      System.out.println("Sintaksna greska na liniji " + getLine() + 
+                         ": Neocekivan token '" + imeTokena + "' (" + vrednost + ")");
+   }
+
+   public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
+      System.out.println("Fatalna greska na liniji " + getLine() + ". Analiza prekinuta.");
+      throw new Exception("Fatalna greska");
+   }
+
+   public int getLine() {
+      return ((MPLexer)getScanner()).getLine();
+   }
+:};
+
+// Terminal symbols
+terminal PROGRAM, INTEGER, CHAR, STRING, FILE, BEGIN, END, READ, OPEN, IN, RETURN;
+terminal ID, CONST, PLUS, MINUS, LEFTPAR, RIGHTPAR, COLON, ASSIGN, SEMICOLON, DO;
+
+// Nonterminal symbols
+non terminal Program, Block, VarList, Statements, Var, Type, Statement;
+non terminal Assignment, ReadExpression, Expression, ArithmeticExpression, PrimaryExpression;
+
+// Gramatika sa oporavkom od gresaka
+
+Program ::= PROGRAM Block RETURN
+          | error Block RETURN
+            {: System.out.println("Greska: Program mora poceti sa 'PROGRAM'"); :}
+          | PROGRAM Block error
+            {: System.out.println("Greska: Nedostaje 'RETURN' na kraju programa"); :}
+          ;
+
+Block ::= BEGIN VarList Statements END
+        | BEGIN error END
+          {: System.out.println("Greska: Neispravan sadrzaj bloka izmedju BEGIN i END"); :}
+        ;
+
+VarList ::= VarList Var 
+          | Var
+          ;
+
+Var ::= ID COLON Type SEMICOLON
+      | ID COLON error SEMICOLON
+        {: System.out.println("Greska u tipu podatka za varijablu na liniji " + getLine()); :}
+      | ID error Type SEMICOLON
+        {: System.out.println("Greska: Nedostaje ':' u deklaraciji na liniji " + getLine()); :}
+      | error SEMICOLON
+        {: System.out.println("Greska u deklaraciji varijable na liniji " + getLine()); :}
+      ;
+
+Type ::= INTEGER | CHAR | STRING | FILE;
+
+Statements ::= Statements SEMICOLON Statement 
+             | Statement
+             ;
+
+Statement ::= Assignment 
+            | ReadExpression
+            | error
+              {: System.out.println("Greska u naredbi na liniji " + getLine()); :}
+            ;
+
+Assignment ::= ID ASSIGN Expression
+             | ID ASSIGN error
+               {: System.out.println("Greska u izrazu dodele na liniji " + getLine()); :}
+             ;
+
+Expression ::= ArithmeticExpression 
+             | OPEN LEFTPAR PrimaryExpression RIGHTPAR
+             | OPEN LEFTPAR error RIGHTPAR
+               {: System.out.println("Greska unutar zagrada u OPEN izrazu na liniji " + getLine()); :}
+             ;
+
+ArithmeticExpression ::= ArithmeticExpression PLUS PrimaryExpression
+                       | ArithmeticExpression MINUS PrimaryExpression
+                       | PrimaryExpression
+                       ;
+
+PrimaryExpression ::= ID | CONST;
+
+ReadExpression ::= READ LEFTPAR ID IN ID RIGHTPAR DO Block
+                 | READ LEFTPAR error RIGHTPAR DO Block
+                   {: System.out.println("Greska u parametrima READ funkcije na liniji " + getLine()); :}
+                 | READ LEFTPAR ID IN ID RIGHTPAR error Block
+                   {: System.out.println("Greska: Nedostaje 'DO' nakon READ naredbe"); :}
+                 ;
